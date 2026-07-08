@@ -1,4 +1,4 @@
-#import modules
+r#import modules
 import speech_recognition as audio
 import pyttsx3
 import os
@@ -157,4 +157,4 @@ while True:
 #   i didn't used the def to make a function to talk because i already wrote the code (agent.say())
 #   so i know that makes the code bigger without any reason or necessity but chill
 #   it's a random project for a 16 years old teenager not openai developers
-#   dev_name: marwan-same 
+#   devloper_name: marwan-same 

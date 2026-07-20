@@ -39,7 +39,7 @@ speak("Hello i am alex , how can i help you?")
 while True:
     try:
         #recognition settings
-        translator.energy_threshold = 115
+        translator.energy_threshold = 200
         translator.dynamic_energy_threshold = False
         translator.adjust_for_ambient_noise = True
         print("\nListening for a command...")
@@ -47,7 +47,7 @@ while True:
         with audio.Microphone() as mic:
             text = ''
             lst = translator.listen(mic)
-            text = translator.recognize_whisper(lst,model="base",language = "english")
+            text = translator.recognize_whisper(lst,model="small",language = "english")
             text = text.lower().strip()
             text = smart_txt(text)
             print(f"You said: {text}")
@@ -87,7 +87,7 @@ while True:
         # 2. Browser, Web Navigation & NAS Server
         # ==========================================
         #open browser on google
-        elif any(keyword in text for keyword in browser):
+        elif any(keyword in text for keyword in browser) and "close" not in text:
             speak("opening browser")
             webbrowser.get('chrome').open("https://google.com")
         #social media
@@ -105,12 +105,16 @@ while True:
         #nas server
         elif any(keyword in text for keyword in server):
             speak("opening server")
-            webbrowser.get('chtome').open("http://localhost:8080")
+            webbrowser.get('chrome').open("http://localhost:8080")
         #close tab
         elif any(keyword in text for keyword in close_tab):
             speak("closeing tab")
             time.sleep(1)
             pyautogui.hotkey('ctrl','w')
+        #close browser
+        elif any(keyword in text for keyword in close_browser):
+            speak("closeing browser")
+            os.system("taskkill /f /im chrome.exe")
 
         # ==========================================
         # 3. Applications & Local Tools
@@ -149,7 +153,7 @@ while True:
                     translator.pause_threshold = 2.5
                     text = ''
                     lst = translator.listen(mic)
-                    text = translator.recognize_whisper(lst,model="base",language='arabic')
+                    text = translator.recognize_whisper(lst,model="small",language='arabic')
                     text = text.lower().strip()
                     text = smart_txt(text)
                     print(f"Song requested: {text}")
@@ -221,7 +225,7 @@ while True:
             with audio.Microphone() as mic:
                 text = ''
                 lst = translator.listen(mic)
-                text = translator.recognize_whisper(lst,model="base")
+                text = translator.recognize_whisper(lst,model="small")
                 text = text.lower().strip()
                 text = smart_txt(text)
                 

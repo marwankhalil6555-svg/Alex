@@ -1,0 +1,12 @@
+partition:.
+├───app
+│   ├───static
+│   ├───Templates
+│   └───python files
+├───Backup
+├───chill music
+├───Clapy
+├───commands
+├───powershell commands
+├───sfx
+└───python files

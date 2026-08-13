@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alex Command Remote</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="card">
+        <h1>Alex Remote Control</h1>
+        <form action="/home" method="POST">
+            <div class="input-group">
+                <input type="text" name="Commands" id="cmd" placeholder="Type command (e.g. open browser and play music)..." required>
+            </div>
+            <button type="submit">Execute Command</button>
+        </form>
+    </div>
+</body>
+</html>

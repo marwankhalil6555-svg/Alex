@@ -1,13 +1,14 @@
 #import modules
 from faster_whisper import WhisperModel
-import speech_recognition as audio
 from playsound import playsound
 from database import *
+from memory import *
 import sounddevice
 import webbrowser
 import pywhatkit
 import pyautogui
 import keyboard
+import platform
 import datetime
 import requests
 import pyttsx3
@@ -17,15 +18,16 @@ import time
 import os
 import re
 #set vars
-library = os.listdir("C:\\Users\\Shiko-store\\Music")
+plat = platform.system()
 path = "C:\\Users\\Shiko-store\\Music"
-translator = audio.Recognizer()
 chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
 chrome = webbrowser.register('chrome',None,webbrowser.BackgroundBrowser(chrome_path))
 default_browser = os.environ['BROWSER'] = chrome_path
-model = WhisperModel("small.en", device="cpu", compute_type="int8")
+model = WhisperModel("small", device="cpu", compute_type="int8")
 sample_rate = 16000
-duration = 5
+duration = 6
+time_now = datetime.datetime.now().strftime("%H").replace("0","",1)
+morning_true = datetime.datetime.now().strftime("%p").lower()
 #speak function
 def speak(inp):
     agent = pyttsx3.init()
@@ -36,10 +38,10 @@ def speak(inp):
 #processing command function
 def do_command(text):
     if any(keyword in text for keyword in greetings):
-        speak("hey, what's up?, how can i help you today?")
+        speak("Hey How Are you , can i help you with something Today?")
         #chat
     elif any(keyword in text for keyword in chat):
-        speak("i'm good as long as you good , how can i help you today?")
+        speak("i'm good as long as you good , how can i help you with something?")
     #thanks
     elif any(keyword in text for keyword in thanks):
         speak("you are welcome ,  i'm here to help any time")
@@ -62,7 +64,7 @@ def do_command(text):
     # 2. Browser, Web Navigation & NAS Server
     # ==========================================
     #open browser on google
-    elif any(keyword in text for keyword in browser) and "close" not in text:
+    elif any(keyword in text for keyword in browser) and "off" not in text:
         speak("opening browser")
         webbrowser.get('chrome').open("https://google.com")
     #social media
@@ -85,7 +87,7 @@ def do_command(text):
     elif any(keyword in text for keyword in close_tab):
         speak("closeing tab")
         time.sleep(1)
-        pyautogui.hotkey('ctrl','w')
+        pyautogui.hotkey("ctrl", "w")
     #close browser
     elif any(keyword in text for keyword in close_browser):
         speak("closeing browser")
@@ -123,27 +125,27 @@ def do_command(text):
         if not any(keyword in text for keyword in randomise):
             speak("what can i play for you?")
         #telling the music name
-            with audio.Microphone() as mic:
-                print("Listening for song name...")
-                translator.pause_threshold = 2.5
-                text = ''
-                lst = translator.listen(mic)
-                text = translator.recognize_whisper(lst,model="base",language='arabic')
-                text = text.lower().strip()
-                text = smart_txt(text)
-                print(f"Song requested: {text}")
-            #randomise algorithm to choose random song
-                if any(keyword in text for keyword in randomise):
-                    song = random.choice(library)
-                    os.startfile(f"{path}\\{song}")
+        audio = sounddevice.rec(
+            int(duration * sample_rate),
+            samplerate=sample_rate,
+            channels=1,
+            dtype="float32"
+        )
+        sounddevice.wait()
+        audio = audio.flatten()
+        sgmts,info = model.transcribe(audio,language="ar",temperature=0,beam_size=5)
+        text = ""
+        for sgmt in sgmts:
+            text += sgmt.text
+        print(f"song: {text}")
             #auto correction to songs
-                matches = difflib.get_close_matches(text, library, n=1, cutoff=0.4)
-                if matches:
-                    matched_file = matches[0] 
-                    speak(f"playing {matched_file}")
-                    os.startfile(os.path.join(path, matched_file))
-                else:
-                    speak("Sorry, I couldn't find that song.")
+        matches = difflib.get_close_matches(text, library, n=1, cutoff=0.4)
+        if matches:
+            matched_file = matches[0] 
+            speak(f"playing {matched_file}")
+            os.startfile(f"{os.path.join(path, matched_file)}")
+        else:
+            speak("Sorry, I couldn't find that song.")
     #play music without the keyword "music" only music name
     elif "play" in text and "music" not in text and "youtube" not in text:
         if not any(keyword in text for keyword in randomise):
@@ -158,6 +160,7 @@ def do_command(text):
                 speak("sorry i couldn't find the song")
         else:
             song = random.choice(library)
+            speak(f"playing {song}")
             os.startfile(f"{path}\\{song}")
     #random music without keyword music
     elif any(keyword in text for keyword in randomise) and "song" in text:
@@ -172,14 +175,6 @@ def do_command(text):
     # ==========================================
     # 6. modes & remote
     # ==========================================
-    #clap mode on
-    elif any(keyword in text for keyword in clapy_mode) and "off" not in text:
-        speak("starting clapy")
-        os.startfile("D:\\Hub\\Alex\\Clapy\\clapy.bat")
-    #clap mode off
-    elif any(keyboard in text for keyboard in clapy_mode_off):
-        speak("clap mode off")
-        keyboard.press("f7")
     #sleeping mode
     elif any(keyword in text for keyword in sleeping_mode) and "play" not in text and "visit" not in text:
         speak("sleeping mode")
@@ -193,6 +188,7 @@ def do_command(text):
         speak("chilling mode on")
         time.sleep(1.3)
         keyboard.press("f7")
+        time.sleep(2)
         os.startfile("D:\\Hub\\Alex\\Clapy\\clapy.bat")
         time.sleep(1.5)
         os.startfile("D:\\Hub\\Alex\\powershell commands\\chill.vbs")
@@ -233,18 +229,29 @@ def do_command(text):
     #shut down pc
     elif any(keyword in text for keyword in close):
         speak("are you sure you want shutdown pc?")
-        with audio.Microphone() as mic:
-            text = ''
-            lst = translator.listen(mic)
-            text = translator.recognize_whisper(lst,model="base")
+        audio = sounddevice.rec(
+            int(duration * sample_rate),
+            samplerate=sample_rate,
+            channels=1,
+            dtype="float32"
+        )
+        sounddevice.wait()
+        audio = audio.flatten()
+        text = ""
+        
+        sgmts,info = model.transcribe(audio, language="en", temperature=0, beam_size=5)
+        for sgmt in sgmts:
+            text += sgmt.text
             text = text.lower().strip()
-            text = smart_txt(text)
-            if any(keyword in text for keyword in accept):
-                os.system("shutdown /s")
-                speak("shutting pc down")
-                exit()
-            else:
-                pass
+            text = smart_txt(str(text))
+        print(text)
+        if any(keyword in text for keyword in accept):
+            os.system("shutdown /s")
+            speak("shutting pc down")
+            exit()
+        else:
+            print(text)
+            pass
         #exit
     elif any(keyword in text for keyword in exit_commands):
         speak("glad to help you today , goodbye")
@@ -254,10 +261,26 @@ def do_command(text):
 class smart_txt(str):
     def __contains__(self,keyword):
         return bool(re.search(rf"\b{re.escape(keyword)}\b",str(self)))
+#supported_platform
+if not plat == "Windows":
+    print("sorry this program only supported for windows")
+    time.sleep(3)
+    exit()
+else:
+    pass
+#greetıngs for tıme now
+
+if int(time_now) < 12:
+    speak(f"Good morning mster {username_name} , how can i help you this morning?")
+elif int(time_now) > 12 and int(time_now) < 20:
+    speak(f"Good evening mster {username_name} , how can i help you this evening?")
+else:
+    speak(f"Good night mster {username_name} , how can i help you this night?")
+
 #the program
-speak("Hello i am alex , how can i help you?")
 while True:
     try:
+        library = os.listdir("C:\\Users\\Shiko-store\\Music")
         #set key
         keyboard.wait("f9")
         #recognition settings
@@ -284,12 +307,17 @@ while True:
             text += sgmt.text
             text = text.lower().strip()
         print('' .join(text))
-        commands = [smart_txt(cmd.strip()) for cmd in text.split(" and ")]
-        for text in commands:
-            do_command(text)
+        commands = [smart_txt(cmd.strip()) for cmd in text.split("and")]
+        for command in commands:
+            if "or" in command:
+                options = [option.strip() for option in command.split(" or ") if option.strip()]
+                if options:
+                    choosed_command = random.choice(options)
+                    do_command(choosed_command)
+            else:
+                do_command(command)
         #off sound
         playsound("D:\\Hub\\Alex\\sfx\\sfx.wav")
-
     #errors area
     except Exception as e:
         speak(f"sorry command error , {e}")
